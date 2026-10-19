@@ -1,0 +1,10 @@
+streamlit==1.66.0
+pydantic==2.14.1
+pymupdf==1.28.2
+pdfplumber==0.11.10
+plotly==7.1.0
+pandas==3.0.6
+openai==3.35.1
+anthropic==1.15.0
+python-dotenv==1.2.4
+mcp==1.30.0

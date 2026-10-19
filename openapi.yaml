@@ -1,0 +1,107 @@
+openapi: 3.1.0
+info:
+  title: Enterprise Contract Compliance Analyzer Connector API
+  version: 1.0.0
+  description: >
+    External plugin and connector specification exposing the Agentic RAG Contract
+    Compliance Engine for third-party assistants (Microsoft Copilot, ChatGPT Enterprise, Claude).
+servers:
+  - url: https://api.internal-compliance.enterprise.com/v1
+    description: Production API Gateway
+security:
+  - BearerAuth: []
+  - OAuth2ServiceClient: ["contracts:analyze", "telemetry:read"]
+paths:
+  /contracts/analyze:
+    post:
+      operationId: analyzeContractCompliance
+      summary: Run Agentic RAG compliance analysis against all 5 policy controls.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Uploaded PDF contract.
+                session_id:
+                  type: string
+                  description: Optional conversation session ID for multi-turn state caching.
+      responses:
+        "200":
+          description: Validated compliance output conforming to Section 7 schema.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractAnalysisReport"
+  /contracts/{session_id}/chat:
+    post:
+      operationId: chatWithContract
+      summary: Multi-turn follow-up interrogation over cached contract chunks.
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [question]
+              properties:
+                question:
+                  type: string
+      responses:
+        "200":
+          description: Grounded answer with section citations.
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    OAuth2ServiceClient:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://auth.enterprise.com/oauth2/token
+          scopes:
+            contracts:analyze: Analyze uploaded PDF contracts
+            telemetry:read: Read KPI metrics and trace logs
+  schemas:
+    ComplianceItem:
+      type: object
+      required: [Compliance Question, Compliance State, Confidence, Relevant Quotes, Rationale]
+      properties:
+        Compliance Question:
+          type: string
+        Compliance State:
+          type: string
+          enum: [Fully Compliant, Partially Compliant, Non-Compliant]
+        Confidence:
+          type: string
+          example: "95%"
+        Relevant Quotes:
+          type: array
+          items:
+            type: string
+        Rationale:
+          type: string
+    ContractAnalysisReport:
+      type: object
+      properties:
+        trace_id:
+          type: string
+        overall_compliance_rate:
+          type: number
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/ComplianceItem"

@@ -1,0 +1,20 @@
+# Secrets
+.env
+
+# Confidential assignment brief (do not publish)
+docs/spec/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Runtime artifacts (regenerated on first run)
+logs/
+data/*.db
+
+# Editor / tooling
+.claude/
+CLAUDE.md
+.vscode/
+.idea/

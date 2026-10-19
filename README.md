@@ -1,0 +1,162 @@
+# Enterprise Contract Compliance Analyzer
+
+An **Agentic RAG** prototype that audits third-party contracts against five internal security requirements. It uses a Router → Extractor → Evaluator agent pipeline, structured JSON trace logging, a KPI dashboard backed by SQLite, and an MCP server for extensibility.
+
+For design rationale, trade-offs and KPI definitions, see [docs/adr/ARCHITECTURE.md](docs/adr/ARCHITECTURE.md).
+
+---
+
+## Quick Start
+
+Requires **Python 3.11+** (tested on 3.13) and `git`.
+
+```bash
+git clone <repo-url>
+cd contract-analyzer
+```
+
+**1. Add an LLM key.** Copy `.env.example` to `.env` and set `ANTHROPIC_API_KEY` (or `OPENAI_API_KEY`). Analysis and chat require a key; the dashboard and logs open without one (see *Temporary API key for reviewers*).
+
+**2. Run.**
+
+**Windows (PowerShell)**
+
+```powershell
+.\run.ps1
+```
+
+**macOS / Linux**
+
+```bash
+./run.sh
+```
+
+Both scripts create `.venv`, install the pinned `requirements.txt` and launch Streamlit. Wait for `You can now view your Streamlit app in your browser`, then open **http://localhost:8501**. The browser does not open automatically.
+
+To do it manually:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1      # macOS/Linux: source .venv/bin/activate
+pip install -r requirements.txt
+streamlit run app.py --server.headless true
+```
+
+**Troubleshooting**
+
+| Symptom | Fix |
+| :--- | :--- |
+| `running scripts is disabled` (PowerShell) | `Set-ExecutionPolicy -Scope Process Bypass`, then re-run `.\run.ps1` |
+| `python` not found on Windows | Use the `py` launcher (`py -m venv .venv`) |
+| Browser says "cannot reach the page" | Wait for the `Local URL` line in the terminal; try http://127.0.0.1:8501; if port 8501 is busy, use the port Streamlit prints |
+| Red `CRITICAL: Missing ANTHROPIC_API_KEY` banner | Set the key in `.env` (copy `.env.example`) or paste it in the sidebar, then re-run |
+| A question shows `Needs Human Review` | Its LLM calls failed 3 times; check the `CRITICAL` event for that `trace_id` in Tab 3 and the provider status |
+
+## LLM Configuration
+
+Create a `.env` file in the project root from `.env.example` (never commit it):
+
+```
+ANTHROPIC_API_KEY=sk-ant-your-key-here
+# OR
+OPENAI_API_KEY=sk-your-key-here
+
+# Optional model overrides
+# ANTHROPIC_MODEL=claude-sonnet-4-6
+# OPENAI_MODEL=gpt-4o-mini
+```
+
+You can also paste a key into the Streamlit sidebar.
+
+| Credentials present | Provider used | Default model |
+| :--- | :--- | :--- |
+| `ANTHROPIC_API_KEY` | Anthropic | `claude-sonnet-4-6` |
+| `OPENAI_API_KEY` (no Anthropic key) | OpenAI | `gpt-4o-mini` |
+| none | none | **Analysis and chat are disabled** |
+
+**Failure behaviour (fail fast, never guess):**
+- **No API key:** the app shows `CRITICAL: Missing ANTHROPIC_API_KEY ... System halted.`, blocks analysis and chat, and logs a `CRITICAL` `CONFIG_ERROR` event. The KPI dashboard and log viewer still work, because they read the pre-seeded history.
+- **Key present but an LLM call fails** (network, rate limit, malformed JSON): retried up to 2 times with exponential backoff (1 s, then 2 s), logging a `WARN` `LLM_RETRY` event each time. If all 3 attempts fail, that question is reported as **`Needs Human Review`** with 0% confidence, and a `CRITICAL` `LLM_EXTRACTION_FAILED` event is logged. No compliance state is guessed. This state is an addition to the three states in the assignment's Table 1, so a failure is never reported as a real determination.
+
+## Temporary API key for reviewers
+
+Analysis needs a key. The candidate will send a **temporary, spend-limited Anthropic key** separately (not in this repo). Put it in `.env` as `ANTHROPIC_API_KEY=...` (or paste it in the sidebar) before running an analysis. A run costs roughly $0.05.
+
+**Without a key you can still review:** Tab 2 (KPI dashboard) and Tab 3 (logs) open pre-loaded with three real, completed Claude Sonnet runs of the provided sample contract (see below).
+
+## Using the App
+
+1. **Tab 1, Analysis:** upload a PDF and click *Run Compliance Analysis*, or click *Analyze provided sample* in the sidebar to use `data/Sample Contract.pdf`. Results appear as a table and as the Section 7 JSON.
+2. **Tab 2, KPI Dashboard:** latency, cost, groundedness, confidence and retry-rate views, plus a KPI defense matrix.
+3. **Tab 3, Logs:** structured JSON events from `logs/app.jsonl`, filterable by `trace_id`. The same events stream to the terminal that launched Streamlit.
+4. **Tab 4, Chat and MCP:** free-form questions about the contract (bonus feature), plus the OpenAPI spec.
+
+> **Pre-seeded history (real runs):** on first start the app loads `data/seed/analysis_runs.json` and `data/seed/app.seed.jsonl` into `data/kpi_telemetry.db` and `logs/app.jsonl`. These are **3 real runs of `data/Sample Contract.pdf` with `claude-sonnet-4-6`** (about 12.7–12.9k tokens each), produced by `scripts/generate_seed_data.py`. Nothing is synthetic. The first two ran before the five questions were parallelized (94 s and 119 s), and the third ran after (24 s), so the latency chart shows that change. Runs you perform are appended. Delete `data/kpi_telemetry.db` and `logs/app.jsonl` to reset to the seeded state. Three points make for a thin history, so the charts show little trend until more runs accumulate.
+
+## MCP Server
+
+```powershell
+python mcp_server.py        # stdio transport
+```
+
+Tools exposed: `analyze_contract_pdf(pdf_base64, filename)` and `ask_contract_followup(question)`, which answers about the most recently analyzed contract. Example Claude Desktop config:
+
+```json
+{
+  "mcpServers": {
+    "contract-analyzer": {
+      "command": "D:/Manulife_assignment/contract-analyzer/.venv/Scripts/python.exe",
+      "args": ["D:/Manulife_assignment/contract-analyzer/mcp_server.py"]
+    }
+  }
+}
+```
+
+`openapi.yaml` is the REST connector specification (ChatGPT Actions / Copilot Studio). It is a spec only, and no REST server in this repo implements it yet.
+
+## Project Structure
+
+```
+contract-analyzer/
+├── app.py                   # Streamlit UI (Analysis, KPI Dashboard, Logs, Chat)
+├── mcp_server.py            # MCP server (FastMCP) exposing analysis + follow-up tools
+├── openapi.yaml             # OpenAPI 3.1 connector specification
+├── requirements.txt
+├── run.ps1 / run.sh         # One-step setup + launch
+├── README.md
+├── docs/
+│   ├── adr/ARCHITECTURE.md  # Design rationale, trade-offs, KPI defense (ADR-0001)
+│   ├── template/            # architecture-template.md for future ADRs
+│   └── spec/                # Original assignment PDF (confidential)
+├── data/                    # Sample Contract.pdf (interview-provided), kpi_telemetry.db (runtime)
+│   └── seed/                # Real-run seed data (analysis_runs.json, app.seed.jsonl)
+├── scripts/                 # generate_seed_data.py (re-creates the seed from live runs)
+├── logs/                    # Structured JSON trace logs (app.jsonl)
+└── src/
+    ├── schemas.py           # Pydantic v2 models, the 5 questions, Section 7 output schema
+    ├── logger.py            # StructuredTracer (trace_id / span_id), log reader
+    ├── database.py          # SQLite KPI store; loads data/seed on first start
+    ├── parser.py            # PDF ingestion: text sections, tables, image metadata
+    └── agents.py            # Router, Extractor, Evaluator orchestration and chat
+```
+
+## Dependencies
+
+| Package | Purpose |
+| :--- | :--- |
+| streamlit, plotly, pandas | UI and dashboard |
+| pydantic | Schema validation |
+| pymupdf, pdfplumber | PDF text, image and table extraction |
+| anthropic, openai | LLM providers (optional) |
+| python-dotenv | `.env` loading |
+| mcp | MCP server (FastMCP) |
+
+Check each package's licence before redistribution. PyMuPDF is AGPL/commercial.
+
+## Cost
+
+Cost is billed by the LLM provider. The app's `estimated_cost_usd` is a flat-rate approximation (tokens × $0.0000035), not provider billing. The three seeded runs of the sample contract used about 12.7–12.9k tokens each, an estimated **$0.045 per contract**. Check actual spend on the provider's usage page. Opening the app without a key makes no network calls and costs nothing.
+
+## Confidentiality
+
+The assignment brief in `docs/spec/` is confidential. Keep any Git repository private, and make sure `.env` and `data/*.db` are in `.gitignore`.
