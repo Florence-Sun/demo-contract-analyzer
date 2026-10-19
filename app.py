@@ -72,7 +72,7 @@ with st.sidebar:
         """
         **Pipeline Architecture:**
         1. **Ingestion:** Multi-modal PDF Parser (`PyMuPDF` + `pdfplumber`)
-        2. **Router Agent:** Question decomposition & chunk/table dispatch
+        2. **Router Agent:** Keyword-scored routing of clauses, tables & exhibits per question
         3. **Extractor Agent:** Clause synthesis & verbatim quote extraction
         4. **Evaluator Agent:** Groundedness verification & confidence calibration
         """

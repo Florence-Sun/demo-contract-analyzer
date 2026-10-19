@@ -79,9 +79,11 @@ Each chunk has `chunk_id` (`P3-S2`, `P4-TBL1`), `page`, `type`, `section_title` 
 A plain-Python orchestrator (`AgenticComplianceOrchestrator`) calls the three agents directly as methods. There is no LangGraph/CrewAI dependency. The flow is a fixed, small DAG per question (route → extract → evaluate → optional retry), so a framework would add dependencies and hide the control flow without adding capability. If the flow became dynamic (tool-calling agents, branching), I would move to LangGraph for checkpointing and typed state. Inter-agent communication is by typed Python objects (`RouterDecision`, `EvaluatorCritique`, extraction dict), which are Pydantic models where they cross a boundary.
 
 ### Router Agent
-For each question, score every chunk by counting that question's keyword hits in the title and content. Tables with hits get +2 and exhibits with hits get +1. Keep the top **K=4**; if nothing matches, fall back to the first 3 chunks. It then records which sub-task processors apply (`clause_extractor`, `table_parser`, `exhibit_cross_reference_resolver`) and logs a `ROUTE_DECISION` with chunk IDs and rationale.
+For each question, score every chunk by counting that question's keyword hits in the title and content. Tables with hits get +2 and exhibits with hits get +1. Keep the top **K=4**; if nothing matches, fall back to the first 3 chunks. It then records **routing hints** (`clause_extractor`, plus `table_parser` if a table chunk was selected and `exhibit_cross_reference_resolver` if an exhibit chunk was selected) and logs a `ROUTE_DECISION` with chunk IDs and rationale.
 
-This is **lexical routing**, not semantic. It is cheap, deterministic and easy to explain, but it can miss paraphrased clauses and it does not follow cross-references. The "sub-task dispatch" is currently descriptive metadata passed into the prompt, not separate processors.
+This is **lexical routing**, not semantic. It is cheap, deterministic and easy to explain, but it can miss paraphrased clauses and it does not follow cross-references.
+
+**What the "sub-tasks" are, precisely:** the hints are advisory labels, stored in `RouterDecision.sub_tasks_dispatched` (the field name predates this wording) and echoed into the Extractor's prompt. **No separate processor runs.** Table handling happens at ingestion: `pdfplumber` converts tables to Markdown chunks, and the Router boosts them. There is no dedicated table parser at routing time, and **no cross-reference resolver exists**, so a clause such as "see Exhibit G13" is not followed unless the exhibit also scores well on keywords. Real dispatch would mean separate extractor prompts per chunk type and a resolver that follows references, which is listed under Next Steps.
 
 ### Extractor Agent
 Builds a prompt containing the requirement text, the mandatory sub-controls and the routed chunks, and asks for JSON with `compliance_state`, `initial_confidence` (60–99), `relevant_quotes` and `rationale`. `max_tokens` is 2048 and the prompt tells the model to escape quotes. The response is de-fenced, parsed with `json.loads` and validated (state is one of the three allowed values, quotes is a non-empty list of strings, rationale is non-empty). A transport error, timeout, malformed JSON or failed validation counts as a failed attempt. Retries are up to 2, with exponential backoff (1 s, 2 s). SDK-level retries are disabled so the policy lives in one place.
@@ -143,7 +145,7 @@ The latency and cost figures come from the three real seeded runs, so n = 3 (one
 
 1. **The Evaluator is heuristic.** Groundedness is bag-of-words overlap, not exact-substring matching or an LLM judge. A quote that reuses words from the source but misstates the clause can pass. It also does not check that the state follows from the quotes.
 2. **Confidence is calibrated by formula, not against labelled outcomes.** It is a groundedness-weighted discount on the model's self-reported confidence.
-3. **Routing is keyword-based** and does not follow cross-references.
+3. **Routing is keyword-based,** does not follow cross-references, and its `sub_tasks_dispatched` output is advisory (no table-parser or cross-reference-resolver component runs; see §4).
 4. **Cost is a flat per-token rate,** not provider pricing.
 5. **KPI history is thin:** three real seeded runs (n = 3), so trend charts show little trend until more runs accumulate.
 5a. **Concurrency is bounded by the slowest question and by provider rate limits.** All 5 calls start at once, and a 429 is handled only by the generic retry/backoff. There is no shared rate limiter or concurrency cap beyond 5 workers.
@@ -159,4 +161,4 @@ Default: Anthropic `claude-sonnet-4-6` (cloud API), 2,048 max output tokens, SDK
 
 ## 11. Next Steps
 
-Exact-substring (or normalized fuzzy) quote verification; LLM-as-judge for state consistency; embedding-based hybrid retrieval with cross-reference resolution; a labelled evaluation set with calibration curves; the FastAPI wrapper for `openapi.yaml` with auth; parallel per-question extraction; unit tests for parser, router and evaluator.
+Exact-substring (or normalized fuzzy) quote verification; LLM-as-judge for state consistency; embedding-based hybrid retrieval, with a real cross-reference resolver and chunk-type-specific extractors so the Router's dispatch is more than advisory; a labelled evaluation set with calibration curves; the FastAPI wrapper for `openapi.yaml` with auth; parallel per-question extraction; unit tests for parser, router and evaluator.

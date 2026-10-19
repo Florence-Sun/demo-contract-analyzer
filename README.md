@@ -138,16 +138,26 @@ contract-analyzer/
 
 ## Dependencies
 
-| Package | Purpose |
-| :--- | :--- |
-| streamlit, plotly, pandas | UI and dashboard |
-| pydantic | Schema validation |
-| pymupdf, pdfplumber | PDF text, image and table extraction |
-| anthropic | Claude API client |
-| python-dotenv | `.env` loading |
-| mcp | MCP server (FastMCP) |
+Direct dependencies, pinned in `requirements.txt`. Licences are read from each installed package's metadata (versions as pinned).
 
-Check each package's licence before redistribution. PyMuPDF is AGPL/commercial.
+| Package | Version | Purpose | Licence |
+| :--- | :--- | :--- | :--- |
+| streamlit | 1.66.0 | Web UI | Apache-2.0 |
+| plotly | 7.1.0 | Dashboard charts | MIT |
+| pandas | 3.0.6 | Data frames for telemetry | BSD-3-Clause |
+| pydantic | 2.14.1 | Schema validation | MIT |
+| pymupdf | 1.28.2 | PDF text and image extraction | **AGPL-3.0 or Artifex commercial licence** (dual) |
+| pdfplumber | 0.11.10 | PDF table extraction | MIT |
+| anthropic | 1.15.0 | Claude API client | MIT |
+| openai | 3.35.1 | In `requirements.txt` only; unused unless `ANTHROPIC_API_KEY` is absent and `OPENAI_API_KEY` is set (untested) | Apache-2.0 |
+| python-dotenv | 1.2.4 | `.env` loading | BSD-3-Clause |
+| mcp | 1.30.0 | MCP server (FastMCP) | MIT |
+
+Transitive dependencies (numpy, httpx, starlette and others) carry their own licences, and `pip show <package>` or `pip-licenses` lists them.
+
+**PyMuPDF note:** AGPL-3.0 is acceptable for this local, non-redistributed prototype. Offering the app as a network service would require either releasing the source under AGPL or buying Artifex's commercial licence. A production deployment would need that decision, or a swap to a permissively licensed PDF library.
+
+**LLM service:** the Anthropic API is a commercial service governed by Anthropic's terms, not an open-source dependency.
 
 ## Cost
 

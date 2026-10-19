@@ -3,7 +3,7 @@ Agentic RAG Orchestration Engine (Router, Extractor, and Evaluator Agents).
 
 Implements the required multi-agent workflow (Section 3.2):
 1. Router Agent: Decomposes incoming compliance questions, scores and retrieves relevant
-   clauses, tables, and exhibits, and dispatches sub-tasks.
+   clauses, tables, and exhibits, and records advisory routing hints (no separate processors).
 2. Extractor Agent: Performs structured compliance reasoning and verbatim quote extraction.
 3. Evaluator Agent (Critic): Verifies quote groundedness against source text to prevent
    hallucinations, calibrates confidence scores, and triggers automated retries if quality
@@ -228,7 +228,7 @@ class AgenticComplianceOrchestrator:
         question_span_id = f"sp-q{question_spec.id}"
 
         # ------------------------------------------------------------------
-        # AGENT 1: ROUTER AGENT (Decomposition & Sub-Task Dispatch)
+        # AGENT 1: ROUTER AGENT (Decomposition & Chunk Routing)
         # ------------------------------------------------------------------
         router_decision, routed_chunks = self._run_router_agent(
             question_spec, chunks, question_span_id
@@ -365,7 +365,8 @@ class AgenticComplianceOrchestrator:
         """
         Router Agent: Decomposes a compliance question, ranks document chunks by keyword
         and structural relevance (boosting control matrices/tables and exhibits), and
-        determines which specialized sub-task processors to dispatch.
+        records advisory routing hints naming the processing roles that apply (these label
+        the prompt and the log; no separate processor runs).
 
         Args:
             question_spec (ComplianceQuestionSpec): The compliance question metadata.
@@ -398,7 +399,7 @@ class AgenticComplianceOrchestrator:
         if not selected_chunks:
             selected_chunks = chunks[:3]
 
-        # Determine which specialized sub-task components are dispatched
+        # Advisory routing hints (labels only; see ARCHITECTURE.md section 4)
         sub_tasks: List[str] = ["clause_extractor"]
         if any(c["type"] == "table" for c in selected_chunks):
             sub_tasks.append("table_parser")

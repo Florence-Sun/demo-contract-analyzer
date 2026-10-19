@@ -3,7 +3,7 @@ Data Schemas and Domain Models for the Enterprise Contract Compliance Analyzer.
 
 This module defines Pydantic v2 models that enforce strict data contracts across:
 1. The five mandatory compliance requirements (Table 1 of the specification).
-2. Router Agent chunk selection and sub-task dispatch decisions.
+2. Router Agent chunk selection and advisory routing hints.
 3. Evaluator Agent critique, hallucination detection, and confidence calibration.
 4. Final validated JSON output conforming to Section 7 Output Schema.
 """
@@ -171,7 +171,7 @@ class RouterDecision(BaseModel):
         question_id (int): ID of the compliance question being routed.
         topic (str): Compliance domain name.
         selected_chunk_ids (List[str]): Ordered list of document chunk IDs selected for context.
-        sub_tasks_dispatched (List[str]): Specialized extractors invoked (e.g., 'clause_extractor',
+        sub_tasks_dispatched (List[str]): Advisory routing hints, not separate processors (e.g., 'clause_extractor',
             'table_parser', 'exhibit_cross_reference_resolver').
         routing_rationale (str): Explanation logged for observability audit trails.
     """
