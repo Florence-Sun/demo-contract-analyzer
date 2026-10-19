@@ -84,7 +84,10 @@ components:
           type: string
         Compliance State:
           type: string
-          enum: [Fully Compliant, Partially Compliant, Non-Compliant]
+          enum: [Fully Compliant, Partially Compliant, Non-Compliant, Needs Human Review]
+          description: >
+            "Needs Human Review" is returned (with Confidence "0%") only when automated analysis
+            failed after retries; no determination was made.
         Confidence:
           type: string
           example: "95%"

@@ -4,15 +4,14 @@
 | :--- | :--- |
 | **Document ID** | ADR-0001 |
 | **Title** | Agentic RAG architecture for contract compliance analysis |
-| **Status** | Proposed *(Proposed / Accepted / Superseded / Deprecated)* |
+| **Status** | Accepted *(Proposed / Accepted / Superseded / Deprecated)* |
 | **Date** | 2026-10-18 |
 | **Last updated** | 2026-10-18 |
-| **Author** | *TBD* |
-| **Approver** | *TBD* |
-| **Approval date** | *Pending* |
-| **Decision drivers** | Explainable agent flow; traceable logs; offline-demo reliability; low dependency footprint |
+| **Approver** | Florence Sun |
+| **Approval date** | 2026-10-18 |
+| **Decision drivers** | Explainable agent flow; traceable logs; fail-fast reliability; reproducible reviewer demo; low dependency footprint |
 | **Supersedes / Superseded by** | None |
-| **Related** | [README](../../README.md), [Assignment spec](../spec/Contract_Analyzer_Assignment_new.pdf) (confidential) |
+| **Related** | [README](../../README.md); the confidential assignment brief is not included in this repository |
 | **Template** | [architecture-template.md](../template/architecture-template.md) |
 
 ## Key Decisions
