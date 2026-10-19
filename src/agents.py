@@ -79,7 +79,7 @@ def resolve_llm_config() -> Tuple[str, str, str]:
     if openai_key:
         return "openai", openai_key, os.getenv("OPENAI_MODEL", "gpt-4o-mini")
     raise MissingAPIKeyError(
-        "CRITICAL: Missing ANTHROPIC_API_KEY (or OPENAI_API_KEY). System halted."
+        "CRITICAL: Missing ANTHROPIC_API_KEY. System halted."
     )
 
 

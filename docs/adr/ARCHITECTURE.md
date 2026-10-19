@@ -35,29 +35,31 @@ Verify a third-party contract against five security requirements (Password Manag
 
 ```mermaid
 flowchart LR
-    subgraph Clients
-        UI[Streamlit UI<br/>app.py]
-        MCPC[MCP client<br/>Claude Desktop / Cursor]
-        GPT[ChatGPT Action /<br/>Copilot Studio]
-    end
-    GPT -. openapi.yaml<br/>(spec only, no server yet) .-> API[Thin REST wrapper<br/>to be built]
-    MCPC -- stdio --> MCP[mcp_server.py<br/>FastMCP tools]
-    UI --> CORE
-    MCP --> CORE
-    API -.-> CORE
-
-    subgraph CORE[Core library: src/]
-        P[parser.py<br/>text / tables / images] --> R[Router Agent]
-        R --> X[Extractor Agent]
-        X --> E[Evaluator Agent]
-        E -- retry once if ungrounded --> X
+    subgraph clients["Clients"]
+        ui["Streamlit UI (app.py)"]
+        mcpclient["MCP client: Claude Desktop, Cursor"]
+        gpt["ChatGPT Action / Copilot Studio"]
     end
 
-    X -- prompt --> LLM[(Anthropic / OpenAI)]
-    CORE --> LOG[logger.py<br/>logs/app.jsonl + stdout]
-    CORE --> DB[(SQLite<br/>kpi_telemetry.db)]
-    DB --> UI
-    LOG --> UI
+    gpt -.->|"openapi.yaml (spec only)"| rest["REST wrapper (not built yet)"]
+    mcpclient -->|"stdio"| mcpserver["mcp_server.py (FastMCP tools)"]
+
+    subgraph core["Core library (src/)"]
+        parser["parser.py: text, tables, images"] --> router["Router Agent"]
+        router --> extractor["Extractor Agent"]
+        extractor --> evaluator["Evaluator Agent"]
+        evaluator -->|"retry once if ungrounded"| extractor
+    end
+
+    ui --> parser
+    mcpserver --> parser
+    rest -.-> parser
+
+    extractor -->|"prompt"| llm[("Anthropic Claude API")]
+    evaluator --> logger["logger.py: logs/app.jsonl + stdout"]
+    evaluator --> db[("SQLite: kpi_telemetry.db")]
+    db --> ui
+    logger --> ui
 ```
 
 The UI and MCP server are thin adapters over the same core (`parser` → `agents` → `database`/`logger`). A REST connector would be a third adapter. Business logic lives only in `src/`.

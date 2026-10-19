@@ -45,7 +45,7 @@ st.caption(
 with st.sidebar:
     st.header("⚙️ System Configuration")
     api_key_input = st.text_input(
-        "Anthropic or OpenAI API Key",
+        "Anthropic API Key",
         type="password",
         help=(
             "Required to analyze contracts or chat. Alternatively set ANTHROPIC_API_KEY in `.env`. "

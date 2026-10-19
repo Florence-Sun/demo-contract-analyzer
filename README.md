@@ -11,11 +11,11 @@ For design rationale, trade-offs and KPI definitions, see [docs/adr/ARCHITECTURE
 Requires **Python 3.11+** (tested on 3.13) and `git`.
 
 ```bash
-git clone <repo-url>
-cd contract-analyzer
+git clone https://github.com/Florence-Sun/demo-contract-analyzer.git
+cd demo-contract-analyzer
 ```
 
-**1. Add an LLM key.** Copy `.env.example` to `.env` and set `ANTHROPIC_API_KEY` (or `OPENAI_API_KEY`). Analysis and chat require a key; the dashboard and logs open without one (see *Temporary API key for reviewers*).
+**1. Add an LLM key.** Copy `.env.example` to `.env` and set `ANTHROPIC_API_KEY`. Analysis and chat require a key; the dashboard and logs open without one (see *Temporary API key for reviewers*).
 
 **2. Run.**
 
@@ -58,21 +58,17 @@ Create a `.env` file in the project root from `.env.example` (never commit it):
 
 ```
 ANTHROPIC_API_KEY=sk-ant-your-key-here
-# OR
-OPENAI_API_KEY=sk-your-key-here
 
-# Optional model overrides
+# Optional model override (default: claude-sonnet-4-6)
 # ANTHROPIC_MODEL=claude-sonnet-4-6
-# OPENAI_MODEL=gpt-4o-mini
 ```
 
 You can also paste a key into the Streamlit sidebar.
 
-| Credentials present | Provider used | Default model |
-| :--- | :--- | :--- |
-| `ANTHROPIC_API_KEY` | Anthropic | `claude-sonnet-4-6` |
-| `OPENAI_API_KEY` (no Anthropic key) | OpenAI | `gpt-4o-mini` |
-| none | none | **Analysis and chat are disabled** |
+| Credentials present | Result |
+| :--- | :--- |
+| `ANTHROPIC_API_KEY` | Analysis and chat run on `claude-sonnet-4-6` (or `ANTHROPIC_MODEL`) |
+| none | **Analysis and chat are disabled** |
 
 **Failure behaviour (fail fast, never guess):**
 - **No API key:** the app shows `CRITICAL: Missing ANTHROPIC_API_KEY ... System halted.`, blocks analysis and chat, and logs a `CRITICAL` `CONFIG_ERROR` event. The KPI dashboard and log viewer still work, because they read the pre-seeded history.
@@ -147,7 +143,7 @@ contract-analyzer/
 | streamlit, plotly, pandas | UI and dashboard |
 | pydantic | Schema validation |
 | pymupdf, pdfplumber | PDF text, image and table extraction |
-| anthropic, openai | LLM providers (optional) |
+| anthropic | Claude API client |
 | python-dotenv | `.env` loading |
 | mcp | MCP server (FastMCP) |
 
