@@ -83,7 +83,7 @@ Analysis needs a key. The interviewee, Zhimin (Florence) Sun, will send a **temp
 ## Using the App
 
 1. **Tab 1, Analysis:** upload a PDF and click *Run Compliance Analysis*, or click *Analyze provided sample* in the sidebar to use `data/Sample Contract.pdf`. Results appear as a table and as the Section 7 JSON.
-2. **Tab 2, KPI Dashboard:** latency, cost, groundedness, confidence and retry-rate views, plus a KPI defense matrix.
+2. **Tab 2, KPI Dashboard:** latency, cost, groundedness, confidence and retry-rate views, a KPI defense matrix, and threshold alert banners (`src/alerts.py`) that show red/amber when the latest run breaches a KPI threshold (for example, any Needs Human Review question).
 3. **Tab 3, Logs:** structured JSON events from `logs/app.jsonl`, filterable by `trace_id`. The same events stream to the terminal that launched Streamlit.
 4. **Tab 4, Chat and MCP:** free-form questions about the contract (bonus feature), plus the OpenAPI spec.
 

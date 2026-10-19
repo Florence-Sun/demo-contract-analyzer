@@ -16,6 +16,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from src.agents import AgenticComplianceOrchestrator, MissingAPIKeyError, resolve_llm_config
+from src.alerts import evaluate_alerts
 from src.database import init_db, load_kpi_dataframe, save_report
 from src.logger import StructuredTracer, read_recent_logs, seed_logs_if_empty
 from src.parser import ContractPDFParser
@@ -220,6 +221,17 @@ with tab_kpi:
     )
 
     df_telemetry = load_kpi_dataframe()
+
+    active_alerts = evaluate_alerts(df_telemetry)
+    if active_alerts:
+        for alert in active_alerts:
+            show = st.error if alert.severity == "critical" else st.warning
+            show(f"**ALERT: {alert.kpi}.** {alert.message}")
+    elif not df_telemetry.empty:
+        st.success(
+            f"No active alerts. Latest run `{df_telemetry.iloc[-1]['trace_id']}` is within all "
+            "KPI thresholds (see the KPI Defense Matrix below)."
+        )
 
     k_col1, k_col2, k_col3, k_col4, k_col5, k_col6, k_col7 = st.columns(7)
     review_rate = round(df_telemetry["needs_review_count"].fillna(0).sum() / (len(df_telemetry) * 5) * 100, 1)
