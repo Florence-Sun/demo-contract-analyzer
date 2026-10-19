@@ -7,8 +7,17 @@ if (!(Test-Path ".venv")) {
         python -m venv .venv
     }
 }
-& ".\.venv\Scripts\Activate.ps1"
-pip install -r requirements.txt
+
+# Call modules through the venv's python (python -m ...) instead of pip.exe / streamlit.exe.
+# Locked-down machines (AppLocker / Application Control) often block those generated launcher .exe files.
+$venvPython = Join-Path $PSScriptRoot ".venv\Scripts\python.exe"
+
+& $venvPython -m pip install -r requirements.txt
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "ERROR: dependency installation failed (see messages above). Not starting the app." -ForegroundColor Red
+    exit 1
+}
+
 Write-Host "Open http://localhost:8501 once you see 'You can now view your Streamlit app'" -ForegroundColor Yellow
 # headless skips Streamlit's first-run email prompt, which otherwise blocks the server from starting
-streamlit run app.py --server.headless true --server.port 8501
+& $venvPython -m streamlit run app.py --server.headless true --server.port 8501

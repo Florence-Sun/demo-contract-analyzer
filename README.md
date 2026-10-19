@@ -37,9 +37,8 @@ To do it manually:
 
 ```powershell
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1      # macOS/Linux: source .venv/bin/activate
-pip install -r requirements.txt
-streamlit run app.py --server.headless true
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt       # macOS/Linux: .venv/bin/python -m pip ...
+.\.venv\Scripts\python.exe -m streamlit run app.py --server.headless true
 ```
 
 **Troubleshooting**
@@ -48,6 +47,7 @@ streamlit run app.py --server.headless true
 | :--- | :--- |
 | `running scripts is disabled` (PowerShell) | `Set-ExecutionPolicy -Scope Process Bypass`, then re-run `.\run.ps1` |
 | `python` not found on Windows | Use the `py` launcher (`py -m venv .venv`) |
+| `pip.exe` / `streamlit.exe` "blocked by an Application Control policy" | The scripts already call `python -m pip` and `python -m streamlit` to avoid those launchers. If `python.exe` itself is blocked, use your system Python (`py -m venv .venv`) or ask IT to allow the venv folder |
 | Browser says "cannot reach the page" | Wait for the `Local URL` line in the terminal; try http://127.0.0.1:8501; if port 8501 is busy, use the port Streamlit prints |
 | Red `CRITICAL: Missing ANTHROPIC_API_KEY` banner | Set the key in `.env` (copy `.env.example`) or paste it in the sidebar, then re-run |
 | A question shows `Needs Human Review` | Its LLM calls failed 3 times; check the `CRITICAL` event for that `trace_id` in Tab 3 and the provider status |
