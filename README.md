@@ -15,7 +15,7 @@ git clone https://github.com/Florence-Sun/demo-contract-analyzer.git
 cd demo-contract-analyzer
 ```
 
-**1. Add an LLM key.** Copy `.env.example` to `.env` and set `ANTHROPIC_API_KEY`. Analysis and chat require a key; the dashboard and logs open without one (see *Temporary API key for reviewers*).
+**1. Add an LLM key.** Copy `.env.example` to `.env` and set `ANTHROPIC_API_KEY` with the API key that the interviewee, Zhimin (Florence) Sun, provided. Analysis and chat require a key; the dashboard and logs open without one (see *Temporary API key for reviewers*).
 
 **2. Run.**
 
@@ -76,7 +76,7 @@ You can also paste a key into the Streamlit sidebar.
 
 ## Temporary API key for reviewers
 
-Analysis needs a key. The candidate will send a **temporary, spend-limited Anthropic key** separately (not in this repo). Put it in `.env` as `ANTHROPIC_API_KEY=...` (or paste it in the sidebar) before running an analysis. A run costs roughly $0.05.
+Analysis needs a key. The interviewee, Zhimin (Florence) Sun, will send a **temporary, spend-limited Anthropic key** separately (not in this repo). Set `ANTHROPIC_API_KEY` in `.env` with that key (or paste it in the sidebar) before running an analysis. A run costs roughly $0.05.
 
 **Without a key you can still review:** Tab 2 (KPI dashboard) and Tab 3 (logs) open pre-loaded with three real, completed Claude Sonnet runs of the provided sample contract (see below).
 
