@@ -10,7 +10,7 @@ Extracts and normalizes three distinct content modalities from uploaded PDF cont
 import io
 import re
 from typing import Any, Dict, List
-import fitz  # PyMuPDF
+import pymupdf
 import pdfplumber
 from src.logger import StructuredTracer
 
@@ -63,7 +63,7 @@ class ContractPDFParser:
         images_extracted: int = 0
 
         # Pass 1: Extract text sections and embedded image objects via PyMuPDF
-        pdf_doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+        pdf_doc = pymupdf.open(stream=pdf_bytes, filetype="pdf")
         num_pages: int = len(pdf_doc)
 
         for page_idx in range(num_pages):

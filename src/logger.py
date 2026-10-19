@@ -21,6 +21,10 @@ LOG_FILE_PATH = os.path.join(PROJECT_ROOT, "logs", "app.jsonl")
 os.makedirs(os.path.dirname(LOG_FILE_PATH), exist_ok=True)
 _LOG_WRITE_LOCK = threading.Lock()
 
+# Console stream for log lines (None = stdout). The MCP stdio server sets this to stderr,
+# because stdout carries the JSON-RPC protocol and any extra output corrupts it.
+CONSOLE_STREAM = None
+
 
 class StructuredTracer:
     """
@@ -78,9 +82,10 @@ class StructuredTracer:
 
         # Questions are analyzed concurrently; the lock keeps each JSON line intact.
         with _LOG_WRITE_LOCK:
-            # 1. Emit to console stdout for real-time terminal monitoring during live interview
-            sys.stdout.write(serialized_line + "\n")
-            sys.stdout.flush()
+            # 1. Emit to the console for real-time terminal monitoring during live interview
+            console = CONSOLE_STREAM or sys.stdout
+            console.write(serialized_line + "\n")
+            console.flush()
 
             # 2. Persist to JSONL file for observability platforms and UI log viewer
             with open(LOG_FILE_PATH, "a", encoding="utf-8") as log_file:

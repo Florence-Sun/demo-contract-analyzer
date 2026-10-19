@@ -8,13 +8,18 @@ as standardized MCP tool endpoints consumable by any MCP-compatible client
 
 import base64
 import json
+import sys
 from typing import Any, Dict, Optional
 from mcp.server.fastmcp import FastMCP
 
+from src import logger as trace_logger
 from src.agents import AgenticComplianceOrchestrator
 from src.database import save_report
 from src.logger import StructuredTracer
 from src.parser import ContractPDFParser
+
+# stdout is the MCP protocol channel; keep structured logs off it (they still go to logs/app.jsonl)
+trace_logger.CONSOLE_STREAM = sys.stderr
 
 # Initialize FastMCP server instance
 mcp = FastMCP("Enterprise-Contract-Compliance-Analyzer")
